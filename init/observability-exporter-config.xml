@@ -1,0 +1,23 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <progress xmlns="http://tail-f.com/ns/progress">
+    <export xmlns="http://tail-f.com/ns/observability-exporter">
+      <enabled>true</enabled>
+      <influxdb>
+        <host>influxdb</host>
+        <port>8086</port>
+        <username>nso</username>
+        <password>nso-influx-pass</password>
+      </influxdb>
+      <otlp>
+        <host>otel-collector</host>
+        <port>4318</port>
+        <transport>http</transport>
+        <metrics>
+          <host>otel-collector</host>
+          <port>4318</port>
+        </metrics>
+      </otlp>
+      <jaeger-base-url>http://localhost:16686/</jaeger-base-url>
+    </export>
+  </progress>
+</config>

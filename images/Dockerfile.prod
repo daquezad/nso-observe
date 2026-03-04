@@ -1,0 +1,9 @@
+ARG NSO_VERSION
+FROM cisco-nso-prod:${NSO_VERSION}
+USER root
+RUN dnf install -y --nodocs iputils net-tools procps-ng && dnf clean all
+RUN pip install --no-cache-dir \
+    parsedatetime==2.6 \
+    opentelemetry-exporter-otlp==1.39.1 \
+    influxdb==5.3.2
+USER nso

@@ -1,0 +1,136 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.94.0
+    command: --config /otelcol.yaml
+    volumes:
+      - type: bind
+        source: ./config/otelcol.yaml
+        target: /otelcol.yaml
+        read_only: true
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    networks:
+      - nso-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:14269/ || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - nso-net
+    ports:
+      - "16686:16686"
+
+  influxdb:
+    image: influxdb:2.7.1
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+      V1_AUTH_USERNAME: ${INFLUXDB_USERNAME}
+      V1_AUTH_PASSWORD: ${INFLUXDB_PASSWORD}
+    volumes:
+      - type: bind
+        source: ./config/influxdb
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+      - type: volume
+        source: influxdb-data
+        target: /var/lib/influxdb2
+    healthcheck:
+      test: influx ping
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - nso-net
+    ports:
+      - "8086:8086"
+
+  prometheus:
+    image: prom/prometheus:v2.43.0
+    volumes:
+      - type: bind
+        source: ./config/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+      - type: volume
+        source: prometheus-data
+        target: /prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - nso-net
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.1.4
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_DISABLE_SIGNOUT_MENU: "true"
+      GF_DASHBOARDS_JSON_ENABLED: "true"
+      INFLUXDB_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG}
+    volumes:
+      - type: bind
+        source: ./grafana/provisioning/datasources/datasource.yaml
+        target: /etc/grafana/provisioning/datasources/datasource.yaml
+        read_only: true
+      - type: bind
+        source: ./grafana/provisioning/dashboards/dashboard-provider.yaml
+        target: /etc/grafana/provisioning/dashboards/main.yaml
+        read_only: true
+      - type: bind
+        source: ./grafana/dashboards
+        target: /var/lib/grafana/dashboards
+        read_only: true
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    networks:
+      - nso-net
+    ports:
+      - "3000:3000"
+
+  nso:
+    depends_on:
+      otel-collector:
+        condition: service_started
+      influxdb:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: ./init/observability-exporter-config.xml
+        target: /nso/run/cdb/observability-exporter-config.xml
+        read_only: true
+
+volumes:
+  influxdb-data:
+  prometheus-data:

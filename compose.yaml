@@ -1,0 +1,65 @@
+services:
+  nso-build:
+    image: cisco-nso-build:${NSO_VERSION}
+    profiles:
+      - build
+    network_mode: none
+    command: tail -f /dev/null
+    volumes:
+      - type: bind
+        source: ./neds
+        target: /neds
+      - type: bind
+        source: ./packages
+        target: /packages
+      - type: volume
+        source: nso-packages
+        target: /nso/run/packages
+      - type: bind
+        source: ./scripts/build-packages.sh
+        target: /build-packages.sh
+
+  nso:
+    image: nso-custom-prod:${NSO_VERSION}
+    volumes:
+      - type: volume
+        source: nso-packages
+        target: /nso/run/packages
+        read_only: true
+      - type: volume
+        source: nso-cdb
+        target: /nso  # Persists CDB, SSH keys, logs, and runtime state
+      - type: bind
+        source: ./scripts/pre-ncs-start
+        target: /etc/ncs/pre-ncs-start.d
+      - type: bind
+        source: ./init/users.xml
+        target: /nso/run/cdb/users.xml
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      NCS_CLI_SSH: ${NCS_CLI_SSH}
+      NCS_WEBUI_TRANSPORT_TCP: ${NCS_WEBUI_TRANSPORT_TCP}
+      NCS_WEBUI_TRANSPORT_SSL: ${NCS_WEBUI_TRANSPORT_SSL}
+      NCS_NETCONF_TRANSPORT_SSH: ${NCS_NETCONF_TRANSPORT_SSH}
+      NCS_NETCONF_TRANSPORT_TCP: ${NCS_NETCONF_TRANSPORT_TCP}
+    healthcheck:
+      test: ncs_cmd -c "wait-start 2"
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - nso-net
+    ports:
+      - "2024:2024"
+      - "8080:8080"
+      - "8888:8888"
+      - "2022:2022"
+
+volumes:
+  nso-packages:
+  nso-cdb:
+
+networks:
+  nso-net:

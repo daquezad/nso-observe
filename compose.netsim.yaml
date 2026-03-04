@@ -1,0 +1,46 @@
+services:
+  netsim:
+    image: cisco-nso-prod:${NSO_VERSION}
+    user: root
+    entrypoint: bash
+    command: /netsim-start.sh
+    volumes:
+      - type: volume
+        source: nso-packages
+        target: /nso/run/packages
+        read_only: true
+      - type: volume
+        source: netsim-vol
+        target: /netsim-output
+      - type: bind
+        source: ./netsim/netsim-start.sh
+        target: /netsim-start.sh
+    environment:
+      NETSIM_DEVICE_COUNT: ${NETSIM_DEVICE_COUNT}
+    healthcheck:
+      test: ncs-netsim --dir /netsim is-alive
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - nso-net
+
+  nso:
+    depends_on:
+      netsim:
+        condition: service_healthy
+    volumes:
+      - type: volume
+        source: netsim-vol
+        target: /netsim-output
+        read_only: true
+      - type: bind
+        source: ./netsim/post-ncs-start/01-load-netsim-devices.sh
+        target: /etc/ncs/post-ncs-start.d/01-load-netsim-devices.sh
+      - type: bind
+        source: ./init/authgroups.xml
+        target: /netsim-config/authgroups.xml
+
+volumes:
+  netsim-vol:
