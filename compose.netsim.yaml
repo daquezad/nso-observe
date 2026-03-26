@@ -16,7 +16,7 @@ services:
         source: ./netsim/netsim-start.sh
         target: /netsim-start.sh
     environment:
-      NETSIM_DEVICE_COUNT: ${NETSIM_DEVICE_COUNT}
+      NETSIM_DEVICES_PER_NED: ${NETSIM_DEVICES_PER_NED}
     healthcheck:
       test: ncs-netsim --dir /netsim is-alive
       interval: 5s
