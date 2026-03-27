@@ -3,9 +3,17 @@ set -e
 
 NETSIM_DEVICES_XML="${NETSIM_DEVICES_XML:-/netsim-output/netsim-devices.xml}"
 NETSIM_AUTHGROUPS_XML="${NETSIM_AUTHGROUPS_XML:-/netsim-config/authgroups.xml}"
+MAX_WAIT=60
+
+waited=0
+while [[ ! -f "${NETSIM_DEVICES_XML}" ]] && [[ ${waited} -lt ${MAX_WAIT} ]]; do
+    echo "Waiting for netsim device XML at ${NETSIM_DEVICES_XML}... (${waited}s/${MAX_WAIT}s)"
+    sleep 2
+    waited=$((waited + 2))
+done
 
 if [[ ! -f "${NETSIM_DEVICES_XML}" ]]; then
-    echo "No netsim device XML found at ${NETSIM_DEVICES_XML}, skipping device onboarding"
+    echo "No netsim device XML found at ${NETSIM_DEVICES_XML} after ${MAX_WAIT}s, skipping device onboarding"
     exit 0
 fi
 

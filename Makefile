@@ -64,9 +64,9 @@ up-obs:
 up-all:
 	docker compose -f compose.yaml -f compose.netsim.yaml -f compose.observability.yaml up -d
 
-## Stop and remove all containers (preserves volumes)
+## Stop and remove all containers including build (preserves volumes)
 down:
-	docker compose -f compose.yaml -f compose.netsim.yaml -f compose.observability.yaml down
+	docker compose --profile build -f compose.yaml -f compose.netsim.yaml -f compose.observability.yaml down
 
 ## Open NSO CLI (Cisco-style)
 cli:
@@ -78,4 +78,4 @@ logs:
 
 ## Stop all containers and destroy volumes (full reset)
 clean:
-	docker compose -f compose.yaml -f compose.netsim.yaml -f compose.observability.yaml down -v
+	docker compose --profile build -f compose.yaml -f compose.netsim.yaml -f compose.observability.yaml down -v

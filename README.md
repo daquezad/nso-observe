@@ -194,7 +194,16 @@ An operator user (`oper` / `oper`) is also created via `init/users.xml` on first
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NETSIM_DEVICE_COUNT` | `3` | Number of simulated network devices to create |
+| `NETSIM_DEVICES_PER_NED` | `4` | Number of simulated devices to create **per NED type** |
+
+Netsim automatically discovers all NED packages and creates devices for each type, deriving short names from the package directory:
+
+| NED Package | Device Names |
+|-------------|--------------|
+| `cisco-ios-cli-6.112` | `ios-0`, `ios-1`, `ios-2`, `ios-3` |
+| `cisco-iosxr-cli-7.74` | `iosxr-0`, `iosxr-1`, `iosxr-2`, `iosxr-3` |
+
+Non-NED packages (services, observability exporter, etc.) are automatically skipped.
 
 ### Observability (InfluxDB)
 

@@ -13,13 +13,13 @@ discover_ned_packages() {
     local found=0
     local pkg
     for pkg in "${PACKAGES_DIR}"/*/; do
-        if [[ -d "${pkg}src/yang" ]] || [[ -f "${pkg}package-meta-data.xml" ]]; then
+        if [[ -d "${pkg}netsim" ]]; then
             echo "${pkg%/}"
             found=1
         fi
     done
     if [[ ${found} -eq 0 ]]; then
-        echo "ERROR: No NED packages found in ${PACKAGES_DIR}" >&2
+        echo "ERROR: No NED packages with netsim support found in ${PACKAGES_DIR}" >&2
         exit 1
     fi
 }

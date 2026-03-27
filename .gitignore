@@ -19,7 +19,7 @@ neds/*
 images/*
 !images/.gitkeep
 !images/Dockerfile.prod
-!images/cisco_x509_verify_release.py3
+!images/requirements.txt
 
 # -----------------------------------------------------------------------------
 # NSO Packages (large tarballs, user-provided; extracted dirs)
